@@ -47,6 +47,47 @@ namespace EFCore
                             });
                         });
 
+            AutoMapper.Mapper.Reset();
+
+            AutoMapper.Mapper.Initialize(cfg => {
+
+                cfg.ForAllMaps((typeMap, expression) => {
+
+                    // We should never allow saving an IAuditable thing to an IEntity. This may lead to properties like `UpdatedOn` being edited!
+                    // IEntity's that are also IAuditable will have their auditable properties saved by overrides on the DbContext.
+                    // Additional Note: Line items are not IEntity. But in general, they are navigation properties and not directly mapped, usually they get mapped by Id and new instances are created.
+                    if (typeMap.SourceType.GetInterfaces().Contains(typeof(IAuditable)) && typeMap.DestinationType.GetInterfaces().Contains(typeof(IEntity)))
+                    {
+                        throw new AutoMapperMappingException($"Source type {typeMap.SourceType.Name} and dest type {typeMap.DestinationType.Name} implements {nameof(IAuditable)}. " +
+                            $"Ensure you are not trying to map an auditable VM to an IEntity");
+                    }
+
+                    // Ignore any IAuditable properties from being mapped to an IEntity 9ef entity).
+                    // In the tests when we call AssertConfigurationIsValid against the profiles, AutoMapper will complain because the EF entity (which is not always an IEntity) has auditable properties (like UpdatedOn)
+                    // This is expected. Because we do not want to be mapping ANYTHING to those audit properties
+                    if (typeMap.DestinationType.GetInterfaces().Contains(typeof(IEntity)))
+                    {
+                        expression
+                            .ForMember(nameof(IAuditable.CreatedByDisplayName), opts => opts.Ignore())
+                            .ForMember(nameof(IAuditable.CreatedByWUPeopleId), opts => opts.Ignore())
+                            .ForMember(nameof(IAuditable.UpdatedByDisplayName), opts => opts.Ignore())
+                            .ForMember(nameof(IAuditable.UpdatedByWUPeopleId), opts => opts.Ignore())
+                            .ForMember(nameof(IAuditable.CreatedOnUtc), opts => opts.Ignore())
+                            .ForMember(nameof(IAuditable.UpdatedOnUtc), opts => opts.Ignore());
+                    }
+
+                });
+
+                cfg.CreateMap<CatUpdateViewModel, Cat>()
+                    .ForMember(dest => dest.CatBreedLine,
+                        opts => opts.MapFrom(src => src.CatBreedIds.Select(id => new CatBreedLine()
+                        {
+                            CatId = id,
+                            CatBreedId = src.Id
+                        })));
+
+            });
+
             // Dont create audit json files by default.
             Audit.Core.Configuration.DataProvider = new NullDataProvider();
 
@@ -117,11 +158,43 @@ namespace EFCore
                     // Create, migrate and seed the SQLite database
                     context.Database.Migrate();
 
-                    context.Cat.Add(new Cat(){
+                    var newCat = new Cat(){
                         MeowLoudness = 42
-                    });
+                    };
+                    var newBreed = new CatBreed(){
+                        BreedName = "SuperCat"
+                    };
 
-                    context.SaveChanges();
+                    context.Cat.Add(newCat);
+                    context.CatBreed.Add(newBreed);
+
+                    // Sets the Ids on the above tracked entities.
+                    await context.SaveChangesAsync();
+
+                    // Save the line item creating the many-to-many relationship
+                    context.CatBreedLine.Add(new CatBreedLine(){
+                        CatId = newCat.Id,
+                        CatBreedId = newBreed.Id
+                    });
+                    await context.SaveChangesAsync();
+
+                    // The update! Bug: This bumps the createdon and updated dates even though this never changed!!!!
+
+                    // Create a new VM of an existing cat to save
+                    var catToSave = new CatUpdateViewModel()
+                    {
+                        Id = newCat.Id,
+                        MeowLoudness = 100,
+                        CatBreedIds = new List<int>{ newBreed.Id }
+                    };
+
+                    var existingCatEntity = await context.Cat
+                        .SingleOrDefaultAsync(x => x.Id == newCat.Id);
+
+                    // Mutate existingCatEntity
+                    AutoMapper.Mapper.Map(catToSave, existingCatEntity);
+
+                    await context.SaveChangesAsync();
                
                 }
 

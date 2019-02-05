@@ -8,17 +8,36 @@ namespace ProjectTo_Issue.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Cat",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MeowLoudness = table.Column<int>(nullable: false),
+                    CreatedByWUPeopleId = table.Column<string>(nullable: false),
+                    CreatedByDisplayName = table.Column<string>(nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(nullable: false),
+                    UpdatedByWUPeopleId = table.Column<string>(nullable: false),
+                    UpdatedByDisplayName = table.Column<string>(nullable: false),
+                    UpdatedOnUtc = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cat", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CatBreed",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     BreedName = table.Column<string>(nullable: true),
-                    CreatedByWUPeopleId = table.Column<string>(nullable: true),
-                    CreatedByDisplayName = table.Column<string>(nullable: true),
+                    CreatedByWUPeopleId = table.Column<string>(nullable: false),
+                    CreatedByDisplayName = table.Column<string>(nullable: false),
                     CreatedOnUtc = table.Column<DateTime>(nullable: false),
-                    UpdatedByWUPeopleId = table.Column<string>(nullable: true),
-                    UpdatedByDisplayName = table.Column<string>(nullable: true),
+                    UpdatedByWUPeopleId = table.Column<string>(nullable: false),
+                    UpdatedByDisplayName = table.Column<string>(nullable: false),
                     UpdatedOnUtc = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
@@ -51,47 +70,54 @@ namespace ProjectTo_Issue.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Cat",
+                name: "CatBreedLine",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    MeowLoudness = table.Column<int>(nullable: false),
-                    CatBreedId = table.Column<int>(nullable: true),
-                    CreatedByWUPeopleId = table.Column<string>(nullable: false),
-                    CreatedByDisplayName = table.Column<string>(nullable: false),
+                    CatId = table.Column<int>(nullable: false),
+                    CatBreedId = table.Column<int>(nullable: false),
+                    CreatedByWUPeopleId = table.Column<string>(nullable: true),
+                    CreatedByDisplayName = table.Column<string>(nullable: true),
                     CreatedOnUtc = table.Column<DateTime>(nullable: false),
-                    UpdatedByWUPeopleId = table.Column<string>(nullable: false),
-                    UpdatedByDisplayName = table.Column<string>(nullable: false),
+                    UpdatedByWUPeopleId = table.Column<string>(nullable: true),
+                    UpdatedByDisplayName = table.Column<string>(nullable: true),
                     UpdatedOnUtc = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Cat", x => x.Id);
+                    table.PrimaryKey("PK_CatBreedLine", x => new { x.CatId, x.CatBreedId });
                     table.ForeignKey(
-                        name: "FK_Cat_CatBreed_CatBreedId",
+                        name: "FK_CatBreedLine_CatBreed_CatBreedId",
                         column: x => x.CatBreedId,
                         principalTable: "CatBreed",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CatBreedLine_Cat_CatId",
+                        column: x => x.CatId,
+                        principalTable: "Cat",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Cat_CatBreedId",
-                table: "Cat",
+                name: "IX_CatBreedLine_CatBreedId",
+                table: "CatBreedLine",
                 column: "CatBreedId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Cat");
+                name: "CatBreedLine");
 
             migrationBuilder.DropTable(
                 name: "GenericAudit");
 
             migrationBuilder.DropTable(
                 name: "CatBreed");
+
+            migrationBuilder.DropTable(
+                name: "Cat");
         }
     }
 }

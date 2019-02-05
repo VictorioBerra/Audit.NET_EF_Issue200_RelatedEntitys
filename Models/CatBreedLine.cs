@@ -1,36 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace EFCore.Models
 {
-    public class Cat : IAuditable, IEntity
+    public class CatBreedLine : IAuditable
     {
 
-        public Cat()
-        {
-            CatBreedLine = new HashSet<CatBreedLine>();
-        }
+        public virtual int CatId { get; set; }
 
-        public int Id { get; set; }
+        public virtual int CatBreedId { get; set; }
 
-        public int MeowLoudness { get; set; }
+        public Cat Cat { get; set; }
 
-        public ICollection<CatBreedLine> CatBreedLine { get; set; }
+        public CatBreed CatBreed { get; set; }
 
-
-        [Required]
         public string CreatedByWUPeopleId { get; set; }
-
-        [Required]
         public string CreatedByDisplayName { get; set; }
-        
         public DateTime CreatedOnUtc { get; set; }
-
-        [Required]
         public string UpdatedByWUPeopleId { get; set; }
-
-        [Required]
         public string UpdatedByDisplayName { get; set; }
         public DateTime UpdatedOnUtc { get; set; }
     }

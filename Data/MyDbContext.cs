@@ -32,6 +32,8 @@ namespace EfCore.Data
         public DbSet<Cat> Cat { get; set; }
         public DbSet<CatBreed> CatBreed { get; set; }
 
+        public DbSet<CatBreedLine> CatBreedLine { get; set; }
+
         public override void OnScopeCreated(AuditScope auditScope)
         {
 
@@ -66,5 +68,15 @@ namespace EfCore.Data
             var eventAsEFEvent = _helper.CreateAuditEvent(this);
             efEvent.Entries = eventAsEFEvent.Entries;
         }
+
+     protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            
+            modelBuilder.Entity<CatBreedLine>()
+                .HasKey(bc => new { bc.CatId, bc.CatBreedId });
+
+        }
+
     }
 }

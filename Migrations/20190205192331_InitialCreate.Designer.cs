@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ProjectTo_Issue.Migrations
 {
     [DbContext(typeof(MyAppContext))]
-    [Migration("20190205155350_InitialCreate")]
+    [Migration("20190205192331_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -22,8 +22,6 @@ namespace ProjectTo_Issue.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
-
-                    b.Property<int?>("CatBreedId");
 
                     b.Property<string>("CreatedByDisplayName")
                         .IsRequired();
@@ -45,8 +43,6 @@ namespace ProjectTo_Issue.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CatBreedId");
-
                     b.ToTable("Cat");
                 });
 
@@ -56,6 +52,33 @@ namespace ProjectTo_Issue.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("BreedName");
+
+                    b.Property<string>("CreatedByDisplayName")
+                        .IsRequired();
+
+                    b.Property<string>("CreatedByWUPeopleId")
+                        .IsRequired();
+
+                    b.Property<DateTime>("CreatedOnUtc");
+
+                    b.Property<string>("UpdatedByDisplayName")
+                        .IsRequired();
+
+                    b.Property<string>("UpdatedByWUPeopleId")
+                        .IsRequired();
+
+                    b.Property<DateTime>("UpdatedOnUtc");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CatBreed");
+                });
+
+            modelBuilder.Entity("EFCore.Models.CatBreedLine", b =>
+                {
+                    b.Property<int>("CatId");
+
+                    b.Property<int>("CatBreedId");
 
                     b.Property<string>("CreatedByDisplayName");
 
@@ -69,9 +92,11 @@ namespace ProjectTo_Issue.Migrations
 
                     b.Property<DateTime>("UpdatedOnUtc");
 
-                    b.HasKey("Id");
+                    b.HasKey("CatId", "CatBreedId");
 
-                    b.ToTable("CatBreed");
+                    b.HasIndex("CatBreedId");
+
+                    b.ToTable("CatBreedLine");
                 });
 
             modelBuilder.Entity("EFCore.Models.GenericAudit", b =>
@@ -115,11 +140,17 @@ namespace ProjectTo_Issue.Migrations
                     b.ToTable("GenericAudit");
                 });
 
-            modelBuilder.Entity("EFCore.Models.Cat", b =>
+            modelBuilder.Entity("EFCore.Models.CatBreedLine", b =>
                 {
-                    b.HasOne("EFCore.Models.CatBreed", "Breed")
-                        .WithMany("Cats")
-                        .HasForeignKey("CatBreedId");
+                    b.HasOne("EFCore.Models.CatBreed", "CatBreed")
+                        .WithMany("CatBreedLine")
+                        .HasForeignKey("CatBreedId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("EFCore.Models.Cat", "Cat")
+                        .WithMany("CatBreedLine")
+                        .HasForeignKey("CatId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }
