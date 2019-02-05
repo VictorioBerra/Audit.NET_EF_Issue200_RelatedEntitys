@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Audit.Core;
 using Audit.Core.Providers;
 using Audit.EntityFramework;
@@ -82,8 +82,8 @@ namespace EFCore
                     .ForMember(dest => dest.CatBreedLine,
                         opts => opts.MapFrom(src => src.CatBreedIds.Select(id => new CatBreedLine()
                         {
-                            CatId = id,
-                            CatBreedId = src.Id
+                            CatId = src.Id,
+                            CatBreedId = id
                         })));
 
             });
