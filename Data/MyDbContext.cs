@@ -24,16 +24,13 @@ namespace EfCore.Data
 
     public class MyAppContext : AuditDbContext
     {
-        public DbSet<GenericAudit> GenericAudit { get; set; }
-
-        public DbSet<Cat> Cat { get; set; }
-
-        public DbSet<CatBreed> CatBreed { get; set; }
-
-
         public MyAppContext(DbContextOptions<MyAppContext> options)
             : base(options)
         { }
+
+        public DbSet<GenericAudit> GenericAudit { get; set; }
+        public DbSet<Cat> Cat { get; set; }
+        public DbSet<CatBreed> CatBreed { get; set; }
 
         public override void OnScopeCreated(AuditScope auditScope)
         {
@@ -42,14 +39,15 @@ namespace EfCore.Data
             var currentWUPeopleIdString = "Anonymous";
             var currentUsernameString = "Anonymous";
 
-            var entities = auditScope.GetEntityFrameworkEvent().Entries.Where(x => x.Action == "Insert" || x.Action == "Update");
-            foreach (var entity in entities)
+            var efEvent = auditScope.GetEntityFrameworkEvent();
+            var entries = efEvent.Entries.Where(x => x.Action == "Insert" || x.Action == "Update");
+            foreach (var entry in entries)
             {
-                IAuditable auditableEntry = entity.Entity as IAuditable;
+                IAuditable auditableEntry = entry.Entity as IAuditable;
                 if (auditableEntry != null)
                 {
                     // entity.GetEntry().CurrentValues, etc...
-                    if (entity.Action == "Insert")
+                    if (entry.Action == "Insert")
                     {
                         auditableEntry.CreatedOnUtc = DateTime.UtcNow;
                         auditableEntry.CreatedByWUPeopleId = currentWUPeopleIdString;
@@ -60,8 +58,13 @@ namespace EfCore.Data
                     auditableEntry.UpdatedByWUPeopleId = currentWUPeopleIdString;
                     auditableEntry.UpdatedByDisplayName = currentUsernameString;
                 }
-
             }
+
+            // Re-validate  (we have to completely overwrite the Entries because we have no way to update the existing entry and fix the ColumnValues)
+            // If `GetColumnValues()` was public, that and `DbContextHelper.GetValidationResults(auditableEntry)` would be enough.
+            var _helper = new DbContextHelper();
+            var eventAsEFEvent = _helper.CreateAuditEvent(this);
+            efEvent.Entries = eventAsEFEvent.Entries;
         }
     }
 }
